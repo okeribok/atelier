@@ -26,13 +26,13 @@ iframe{background:#fff;border:0;height:34%;border-bottom:1px solid #c5ccd8}
 .a{color:#1b7f3b}.d{color:#c62828}.e{color:#c77a00}.row{margin:3px 0}pre{margin:4px 0;padding:4px;background:#f6f7f9;border-left:3px solid #3b5bdb}
 </style>
 <header><b>ATELIER</b>
-<button id=open>Open folder</button><button id=last hidden>Resume</button>
+<button accesskey="0" title="Alt + 0" id=open>Open folder</button><button id=last hidden>Resume</button>
 <input id=url size=22 title="llama.cpp server URL">
-<button id=yolo title="From the last change down to the code: reconcile everything, fix failing tests, until stable">YOLO</button><button id=run>Run tests</button><button id=sync>Check sync</button><button id=chk title="Deterministic checks: syntax, references, format and invariants, tests">Checks</button><button id=mark>Mark synced</button><button id=snap>Snapshot</button>
-<select id=roll><option value="">Rollback…</option></select><button id=yeet title="Throw away the last YOLO run: restore the state from before it">Yeet</button><button id=accall title="Accept every proposal waiting for you (Ctrl+Enter)">Accept all</button>
+<button accesskey="1" id=yolo title="From the last change down to the code: reconcile everything, fix failing tests, until stable (ALT + 1)">YOLO</button><button accesskey="2" title="Alt + 2" id=run>Run tests</button><button accesskey="3" title="Alt + 3" id=sync>Check sync</button><button accesskey="4" id=chk title="Deterministic checks: syntax, references, format and invariants, tests (Alt + 4)">Checks</button><button accesskey="5" title="Alt + 5" id=mark>Mark synced</button><button id=snap>Snapshot</button>
+<select id=roll><option value="">Rollback…</option></select><button accesskey="6" title="Alt + 6" id=yeet title="Throw away the last YOLO run: restore the state from before it">Yeet</button><button accesskey="7" id=accall title="Accept every proposal waiting for you (ALT + 7)">Accept all</button>
 <select id=eff title="Thinking effort for models that support it (Granite 4.2, Qwen3)"><option value=auto>think: auto</option><option value=off>think: off</option><option value=low>think: low</option><option value=high>think: high</option></select>
 <select id=wf><option value="">Workflows…</option><option value=promote>Promote stages</option><option value=tests>Tests for every claim</option><option value=qual>Tighten quality tests</option></select>
-<button id=ping title="Check the model server: name, context size, round trip">Ping</button><button id=pack title="Copy every file as one Markdown packet">Packet</button><span id=lamp><i class=dot id=ld></i><span id=stat>idle</span></span></header>
+<button accesskey="8" title="Alt + 8" id=ping title="Check the model server: name, context size, round trip">Ping</button><button accesskey="9" title="Alt + 9" id=pack title="Copy every file as one Markdown packet">Packet</button><span id=lamp><i class=dot id=ld></i><span id=stat>idle</span></span></header>
 <main>
 <nav id=tree></nav>
 <section><textarea id=ta spellcheck=false placeholder="Open an empty folder to bootstrap a project, or an existing Atelier folder."></textarea>
@@ -417,7 +417,7 @@ const tree=()=>{$('blast').textContent=blastLine();$('tree').replaceChildren(...
   h('i',{className:'nn',textContent:n}),h('i',{className:'dot s-'+fstat(p)}),h('i',{className:'ch',textContent:changed(p)?'● ':''}),h('i',{className:'sl',textContent:stale(p)?'! ':''}),p.replace(/^(snippets|tests)\//,''))))};
 const pick=p=>{cur=p;$('ta').value=files[p]??'';tree()};
 const savecur=async()=>{const p=cur,v=$('ta').value;if(p&&v!==files[p]){await wr(p,v);tree();{const n=adj(p).filter(stale);if(n.length)say(h('span',{className:'e'},`Edited ${p}. To review: ${n.join(', ')}`))}if(/^pseudo\.md$|^snippets\/[\w-]+\.js$/.test(p))render()}};
-$('ta').onblur=savecur;$('ta').onkeydown=e=>{if(e.key=='s'&&(e.ctrlKey||e.metaKey)){e.preventDefault();savecur()}};
+$('ta').onblur=savecur;
 $('prop').onclick=async()=>{await savecur();cur&&propose(cur,$('ask').value)};
 $('run').onclick=async()=>{await savecur();run()};$('sync').onclick=async()=>{await savecur();check()};
 $('snap').onclick=async()=>{await savecur();await snap();say('Snapshot saved.')};
