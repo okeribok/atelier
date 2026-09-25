@@ -1,6 +1,7 @@
 <!doctype html>
 <meta charset=utf-8>
-<title>Atelier</title>
+<title>🎨Atelier 0.5</title>
+<link rel=icon href=data:,>
 <style>
 *{box-sizing:border-box}
 body{margin:0;background:#e9ecf1;color:#1c2330;font:13px/1.45 system-ui,sans-serif}
@@ -9,12 +10,15 @@ header b{letter-spacing:.04em;margin-right:4px}
 button,select,input{background:#fff;color:#1c2330;border:1px solid #b9c0cc;border-radius:3px;padding:3px 8px;font:inherit}
 button{cursor:pointer}#yolo{background:#3b5bdb;color:#fff;border-color:#3b5bdb;font-weight:600}button:hover{background:#dfe6ff;border-color:#3b5bdb}
 main{display:grid;grid-template-columns:240px 1fr 1fr;height:calc(100vh - 38px)}
-nav{overflow:auto;border-right:1px solid #c5ccd8;padding:4px;background:#f6f7f9}
-nav div{padding:2px 6px;cursor:pointer;white-space:nowrap}nav .on{background:#dfe6ff;box-shadow:inset 3px 0 #3b5bdb}
-nav i{font-style:normal;margin-right:4px}.nn{color:#6b7686;display:inline-block;min-width:2.4em}
-.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#9aa3b2}nav .dot{margin-right:5px}
+nav{display:flex;flex-direction:column;border-right:1px solid #c5ccd8;background:#f6f7f9;overflow:hidden}
+#tree{flex:1;overflow:auto;padding:4px}
+#feed{flex:0 0 40%;overflow:auto;padding:4px 6px;border-top:1px solid #c5ccd8;font-size:11px;line-height:1.6}
+#feed .t{margin-top:6px;color:#1c2330}#feed .s{padding-left:1.4em;color:#667}#feed time{color:#8a93a3;margin-right:5px;font-variant-numeric:tabular-nums}
+#tree div{padding:2px 6px;cursor:pointer;white-space:nowrap}#tree .on{background:#dfe6ff;box-shadow:inset 3px 0 #3b5bdb}
+#tree i{font-style:normal;margin-right:4px}.nn{color:#6b7686;display:inline-block;min-width:2.4em}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#9aa3b2}#tree .dot{margin-right:5px}
 .s-w{background:#3b5bdb;animation:pl 1s infinite}.s-g{background:#1b7f3b}.s-a{background:#e0a100}.s-r{background:#c62828}@keyframes pl{50%{opacity:.3}}
-nav .wk{background:#fff1bf}nav .q{border-left:3px dashed #3b5bdb}nav .dim{opacity:.55}
+#tree .wk{background:#fff1bf}#tree .q{border-left:3px dashed #3b5bdb}#tree .dim{opacity:.55}
 #blast{padding:3px 8px;font-size:12px;color:#556;background:#f6f7f9;border-top:1px solid #c5ccd8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}#lamp{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:10px;background:#2a3344;font-size:12px}
 #yeet{background:#c62828;color:#fff;border-color:#c62828}#accall{background:#1b7f3b;color:#fff;border-color:#1b7f3b}.ch{color:#c77a00}.sl{color:#c62828}
 section{display:flex;flex-direction:column;min-width:0;border-right:1px solid #c5ccd8}
@@ -34,7 +38,7 @@ iframe{background:#fff;border:0;height:34%;border-bottom:1px solid #c5ccd8}
 <select id=wf><option value="">Workflows…</option><option value=promote>Promote stages</option><option value=tests>Tests for every claim</option><option value=qual>Tighten quality tests</option></select>
 <button accesskey="8" title="Alt + 8" id=ping title="Check the model server: name, context size, round trip">Ping</button><button accesskey="9" title="Alt + 9" id=pack title="Copy every file as one Markdown packet">Packet</button><span id=lamp><i class=dot id=ld></i><span id=stat>idle</span></span></header>
 <main>
-<nav id=tree></nav>
+<nav><div id=tree></div><div id=feed></div></nav>
 <section><textarea id=ta spellcheck=false placeholder="Open an empty folder to bootstrap a project, or an existing Atelier folder."></textarea>
 <div id=blast></div><div id=bar><input id=ask placeholder="Instruction for the model (optional)"><button id=prop>Ask model</button><button id=dia>Diagram</button></div></section>
 <section><iframe id=pv sandbox=allow-scripts></iframe><div id=con></div><div id=out></div></section>
@@ -44,6 +48,8 @@ const $=i=>document.getElementById(i),h=(t,p={},...k)=>{const e=Object.assign(do
 const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 const H=s=>{let x=5381;for(let i=0;i<s.length;i++)x=(x*33^s.charCodeAt(i))>>>0;return x.toString(36)};
 const lamp=(k,t)=>{$('ld').className='dot s-'+k;$('stat').textContent=t};   // status lamp: w thinking, g done, a needs you, r error
+const stamp=()=>new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+const feed=(msg,sub)=>{$('feed').append(h('div',{className:sub?'s':'t'},sub?'':h('time',{textContent:stamp()}),msg));$('feed').scrollTop=1e9};   // persistent "what happened" log, separate from the ephemeral results panel
 let root,cur,files={},S={base:{},seen:{}},busy=false,stop=false;
 const out=$('out'),con=$('con'),say=(...k)=>{const d=h('div',{className:'row'},...k);out.append(d);out.scrollTop=1e9;return d};
 
@@ -274,19 +280,20 @@ async function propose(p,extra){
   if(r==null){S.seen[p]=sig(p);await save();tree();return say(`✓ ${p}: no change needed`)}
   offer(p,r)}
 function offer(p,r,note){
+  feed('Ask model → proposed '+p);
   const card=say(h('b',{},`${p}: proposed change${note?' ('+note+')':''} · feeds ${down(p).length} file(s)`),h('pre',{innerHTML:dhtml(files[p]||'',r)}),
-    h('button',{textContent:'Accept',onclick:async()=>{pending.delete(p);await snap();await apply(p,r);await after([p]);check()}}),' ',
-    h('button',{textContent:'Reject',onclick:()=>{pending.delete(p);card.remove();lamp('','idle')}}),' ',
+    h('button',{textContent:'Accept',onclick:async()=>{pending.delete(p);await snap();await apply(p,r);await after([p]);feed('You accepted',true);check()}}),' ',
+    h('button',{textContent:'Reject',onclick:()=>{pending.delete(p);card.remove();lamp('','idle');feed('You rejected',true)}}),' ',
     h('button',{textContent:'Why?',onclick:async e=>{e.target.disabled=true;try{card.append(h('div',{},await llm('In at most 3 short lines say what changed and why, in plain language. Say if anything new is depended on. No preamble.',`FILE ${p}\nDIFF\n${dtxt(files[p]||'',r)}`,{max:200,eff:'off'})))}catch{card.append('(model unavailable)')}lamp('a',pending.size+' waiting for you')}}));
   pending.set(p,{r,card});lamp('a',pending.size+' waiting for you')}
-async function accAll(){if(!pending.size)return say('Nothing is waiting.');const ps=[...pending.keys()];await snap();for(const p of ps)await apply(p,pending.get(p).r);pending.clear();await after(ps);lamp('g','accepted '+ps.length);check()}
+async function accAll(){if(!pending.size)return say('Nothing is waiting.');const ps=[...pending.keys()];await snap();for(const p of ps)await apply(p,pending.get(p).r);pending.clear();await after(ps);lamp('g','accepted '+ps.length);feed('You accepted all ('+ps.length+')');check()}
 
 // ---------- preview + tests in sandboxed iframes ----------
 const SHIM=`<script>const P=(k,d)=>parent.postMessage({atl:k,...d},'*');for(const k of['log','warn','error']){const o=console[k];console[k]=(...a)=>{P('log',{k,m:a.map(String).join(' ')});o(...a)}}onerror=(m,s,l)=>P('log',{k:'error',m:m+' @'+l});addEventListener('unhandledrejection',e=>P('log',{k:'error',m:String(e.reason)}))<\/script>`;
 const HARN=`<script>const T=[],t=(n,f)=>T.push([n,f]),eq=(a,b)=>{if(JSON.stringify(a)!==JSON.stringify(b))throw Error('expected '+JSON.stringify(b)+' got '+JSON.stringify(a))}<\/script>`;
 const RUNR=`<script>addEventListener('load',async()=>{const R=[];for(const[n,f]of T){try{await f();R.push([n,1])}catch(e){R.push([n,0,String(e)])}}P('done',{R})})<\/script>`;
 const code=()=>refs().filter(i=>files[sp(i)]!=null).map(i=>`//#region ${i}\n${files[sp(i)]}\n//#endregion`).join('\n');
-const scripts=()=>libs().map(u=>`<script src="${u}"></script>`).join('');
+const scripts=()=>libs().map(u=>`<script src="${u}"><\/script>`).join('');
 const asm=()=>'<!doctype html><meta charset=utf-8><body>'+scripts()+'<script>'+code()+'<\/script>';
 const doc=test=>'<!doctype html><meta charset=utf-8><body>'+scripts()+SHIM+(test==null?'':HARN)+'<script>'+code()+'<\/script>'+(test==null?'':'<script>'+test+'<\/script>'+RUNR);
 let shown;
@@ -302,8 +309,8 @@ async function backport(){
   const card=say(h('b',{},'app/index.html was edited outside Atelier. Import into the snippets?'),...ch.map(([p,c])=>h('pre',{innerHTML:`<b>${p}</b>\n`+dhtml(files[p]||'',c)})),
     h('button',{textContent:'Import into snippets',onclick:async()=>{await snap();for(const[p,c]of ch)await wr(p,c);
       if(ids.length){let n=(files['pseudo.md'].match(/^\d+\./gm)||[]).length;await wr('pseudo.md',files['pseudo.md'].trimEnd()+'\n'+ids.map(i=>`${++n}. @${i}: imported from an edit of the app, describe what it does`).join('\n')+'\n')}
-      shown=null;card.remove();await render(true);check()}}),' ',
-    h('button',{textContent:'Discard the edit',onclick:async()=>{shown=null;card.remove();await render(true)}}));
+      shown=null;card.remove();await render(true);feed('Imported an outside edit into '+ch.map(x=>x[0]).join(', '));check()}}),' ',
+    h('button',{textContent:'Discard the edit',onclick:async()=>{shown=null;card.remove();await render(true);feed('Discarded an outside edit of app/index.html')}}));
   return true}
 async function render(force){con.replaceChildren();$('pv').srcdoc=doc();if(!force&&await backport())return;const a=asm();await wr('app/index.html',a);S.app=H(a);await save()}
 setInterval(async()=>{if(root&&S.base&&!busy){const d=await rd('app/index.html');if(d!=null&&H(d)!==S.app&&H(d)!==shown)render()}},3000);
@@ -315,11 +322,11 @@ const frame=html=>new Promise(res=>{const f=h('iframe',{hidden:true,sandbox:'all
 
 async function runAll(){const jobs=[...refs().filter(i=>files[`snippets/${i}.test.js`]!=null).map(i=>[sp(i),files[`snippets/${i}.test.js`]]),['tests/app.test.js',files['tests/app.test.js']||''],['tests/quality.test.js',files['tests/quality.test.js']||'']],res=[];
   for(const[p,src]of jobs){const{logs,R}=await frame(doc(src));res.push({p,R,logs})}bads=new Set(fails(res).map(f=>f.p).filter(p=>p!='console'));tree();return res}
-async function run(){out.replaceChildren(...[...pending.values()].map(x=>x.card));await render();
+async function run(){out.replaceChildren(...[...pending.values()].map(x=>x.card));await render();let bad=0;
   for(const{p,R,logs}of await runAll()){const app=p.startsWith('tests/');say(h('b',{},app?p.replace('tests/','').replace('.test.js',' tests'):p));
-    for(const[n,ok,err]of R)say(h('span',{className:ok?'a':'d'},(ok?'✓ ':'✗ ')+n+(err?' — '+err:'')),...(ok||app?[]:[' ',h('button',{textContent:'Fix code',onclick:()=>propose(p,`Test "${n}" fails: ${err}. Fix the snippet code.`)})]));
+    for(const[n,ok,err]of R){if(!ok)bad++;say(h('span',{className:ok?'a':'d'},(ok?'✓ ':'✗ ')+n+(err?' — '+err:'')),...(ok||app?[]:[' ',h('button',{textContent:'Fix code',onclick:()=>propose(p,`Test "${n}" fails: ${err}. Fix the snippet code.`)})]))}
     logs.forEach(l=>say(h('span',{className:'e'},'console: '+l.m)))}
-  say('done.')}
+  say('done.');feed(bad?bad+' failing':'0 failures')}
 
 // ---------- sync, snapshots, changelog ----------
 async function check(){out.replaceChildren(...[...pending.values()].map(x=>x.card));shown=null;tree();await backport();
@@ -338,7 +345,7 @@ $('roll').onchange=e=>{const n=e.target.value;if(n&&confirm('Restore this snapsh
 $('mark').onclick=async()=>{const ch=Object.keys(files).filter(changed);if(!ch.length)return say('Nothing changed since last sync.');
   let note;try{note=await llm(SYS2,ch.map(p=>`### ${p}\n${dtxt(S.base[p]||'',files[p]).slice(0,1500)}`).join('\n\n'))}catch{note='Changed: '+ch.join(', ')}
   await snap();await wr('changelog.md',(files['changelog.md']||'# Changelog\n')+`\n## ${new Date().toISOString().slice(0,16).replace('T',' ')}\n${note}\n`);
-  S.base={...files};for(const p in files)S.seen[p]=sig(p);await save();check();say('Synced. Changelog updated.')};
+  S.base={...files};for(const p in files)S.seen[p]=sig(p);await save();check();say('Synced. Changelog updated.');feed('Mark synced: changelog updated')};
 
 // ---------- YOLO: propagate downward from the last change, fix errors, stop when stable ----------
 // Oscillation guards: (1) one direction only, story to code, by layer; (2) each file is processed at most twice per run;
@@ -357,9 +364,10 @@ async function yolo(){
   if(busy){stop=true;return}
   await savecur();pending.clear();out.replaceChildren();if(await backport())return say('Resolve the pending edit of app/index.html first.');
   busy=true;stop=false;calls=0;$('yolo').textContent='Stop YOLO';lamp('w','YOLO');
-  const MAX=80,hist={},cap={},frozen=new Set(),done=new Set(),edited=new Set(),LIMIT=80,led=[],log=(c,t)=>{led.push(t);say(h('span',{className:c},t))};
+  const MAX=80,hist={},cap={},frozen=new Set(),done=new Set(),edited=new Set(),LIMIT=80,led=[],log=(c,t)=>{led.push(t);say(h('span',{className:c},t));feed(t,true)};
   const hs=p=>hist[p]??=new Set([H(files[p]??'')]);
   try{
+    feed('YOLO');
     await snap('yolo-start');
     const dirty=Q=new Set(missing());for(const p of Object.keys(files))if(changed(p))for(const q of down(p))dirty.add(q);
     log('',`YOLO: ${dirty.size} file(s) to reconcile downstream of your changes.`);
@@ -392,6 +400,7 @@ async function yolo(){
       if(fl2.length<fl.length){done.add(tgt);edited.add(tgt);log('a',`🔧 ${tgt}: fixed (${fl.length} → ${fl2.length} failing) because: ${(lastPlan.split('\n')[0]||'').slice(0,140)}`);fl=fl2}
       else{await wr(tgt,old);log('e',`↩ ${tgt}: fix did not reduce failures (${fl2.length} vs ${fl.length}), reverted`)}}
     for(const p of done)S.seen[p]=sig(p);await save();await render(true);await snap('yolo-end');
+    feed(fl.length?fl.length+' failing':'0 failures');feed('Snapshot: YOLO after');
     say(h('b',{},(stop?'YOLO stopped by you':calls>=MAX?'YOLO stopped: model call budget used':fl.length?'YOLO stopped: unresolved failures':pending.size?`YOLO paused: ${pending.size} large change(s) wait for your review (Accept all, or Yeet)`:frozen.size?'YOLO finished with frozen files':'YOLO stable: everything consistent, all tests pass')),
       ` (${calls} model calls, ${edited.size} file(s) edited${frozen.size?', frozen: '+[...frozen].join(', '):''})`);
     for(const f of fl)log('d',`unresolved: ${f.p} "${f.n}" ${f.err}`);
@@ -402,7 +411,7 @@ async function yolo(){
   finally{busy=false;Q=new Set();$('yolo').textContent='YOLO';tree()}}
 async function yeet(){if(busy){stop=true;while(busy)await new Promise(r=>setTimeout(r,200))}
   const l=[...$('roll').options].map(o=>o.value).filter(Boolean),n=l.find(x=>/yolo-start/.test(x))||l[0];if(!n)return say('No snapshot to go back to.');
-  await restore(n);say('Yeeted: restored the state from before the last YOLO. What you had just now is in the rollback list.')}
+  await restore(n);say('Yeeted: restored the state from before the last YOLO. What you had just now is in the rollback list.');feed('Yeet: restored to before the last YOLO')}
 $('yolo').onclick=yolo;
 
 // ---------- editor ----------
@@ -416,11 +425,11 @@ const blastLine=()=>{const u=adj(cur||'').filter(q=>rank(q)<rank(cur)),d=down(cu
 const tree=()=>{$('blast').textContent=blastLine();$('tree').replaceChildren(...layout().map(([n,p,d])=>h('div',{className:[p==cur?'on':'',p==work?'wk':'',Q.has(p)?'q':'',d?'dim':''].join(' '),style:`padding-left:${6+d*14}px`,title:'● changed since last sync, ! a neighbour changed',onclick:()=>pick(p)},
   h('i',{className:'nn',textContent:n}),h('i',{className:'dot s-'+fstat(p)}),h('i',{className:'ch',textContent:changed(p)?'● ':''}),h('i',{className:'sl',textContent:stale(p)?'! ':''}),p.replace(/^(snippets|tests)\//,''))))};
 const pick=p=>{cur=p;$('ta').value=files[p]??'';tree()};
-const savecur=async()=>{const p=cur,v=$('ta').value;if(p&&v!==files[p]){await wr(p,v);tree();{const n=adj(p).filter(stale);if(n.length)say(h('span',{className:'e'},`Edited ${p}. To review: ${n.join(', ')}`))}if(/^pseudo\.md$|^snippets\/[\w-]+\.js$/.test(p))render()}};
+const savecur=async()=>{const p=cur,v=$('ta').value;if(p&&v!==files[p]){await wr(p,v);tree();feed('You edited '+p);{const n=adj(p).filter(stale);if(n.length){say(h('span',{className:'e'},`Edited ${p}. To review: ${n.join(', ')}`));for(const x of n)feed(x+' marked stale',true)}}if(/^pseudo\.md$|^snippets\/[\w-]+\.js$/.test(p))render()}};
 $('ta').onblur=savecur;
 $('prop').onclick=async()=>{await savecur();cur&&propose(cur,$('ask').value)};
 $('run').onclick=async()=>{await savecur();run()};$('sync').onclick=async()=>{await savecur();check()};
-$('snap').onclick=async()=>{await savecur();await snap();say('Snapshot saved.')};
+$('snap').onclick=async()=>{await savecur();await snap();say('Snapshot saved.');feed('Snapshot saved')};
 $('dia').onclick=async()=>{const m=/```mermaid\n([\s\S]*?)```/.exec(files['arch.md']||'');if(!m)return say('No mermaid block in arch.md');
   try{const{default:mm}=await import('https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs');mm.initialize({startOnLoad:false});say(h('div',{innerHTML:(await mm.render('g'+Date.now(),m[1])).svg}))}catch(e){say('Mermaid failed: '+e.message)}};
 
